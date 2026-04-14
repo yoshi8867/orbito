@@ -70,10 +70,11 @@ fun GameScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     BoardGrid(
-                        state      = state,
-                        cellSize   = cellSize,
-                        ballSize   = ballSize,
-                        onCellTap  = viewModel::onCellTap
+                        state             = state,
+                        cellSize          = cellSize,
+                        ballSize          = ballSize,
+                        onCellTap         = viewModel::onCellTap,
+                        onRotationComplete = viewModel::onRotationComplete
                     )
                     Spacer(Modifier.width(10.dp))
                     SideBallsPanel(

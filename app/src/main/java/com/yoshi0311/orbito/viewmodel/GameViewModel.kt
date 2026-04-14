@@ -5,6 +5,7 @@ import com.yoshi0311.orbito.model.CellState
 import com.yoshi0311.orbito.model.GamePhase
 import com.yoshi0311.orbito.model.GameState
 import com.yoshi0311.orbito.model.Player
+import com.yoshi0311.orbito.model.ROTATION_MAPPING
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +17,7 @@ class GameViewModel : ViewModel() {
 
     fun onCellTap(row: Int, col: Int) {
         val s = _state.value
+        if (s.isRotating) return
         when (s.phase) {
             GamePhase.OPTIONAL_MOVE -> handleOptionalMove(s, row, col)
             GamePhase.PLACE -> handlePlace(s, row, col)
@@ -25,13 +27,26 @@ class GameViewModel : ViewModel() {
 
     fun skipOptionalMove() {
         val s = _state.value
-        if (s.phase == GamePhase.OPTIONAL_MOVE) {
-            _state.value = s.copy(phase = GamePhase.PLACE, selectedCell = null)
-        }
+        if (s.isRotating || s.phase != GamePhase.OPTIONAL_MOVE) return
+        _state.value = s.copy(phase = GamePhase.PLACE, selectedCell = null)
     }
 
     fun restart() {
         _state.value = GameState()
+    }
+
+    // UI에서 회전 애니메이션이 끝났을 때 호출
+    fun onRotationComplete() {
+        val s = _state.value
+        if (!s.isRotating) return
+        val winner = checkWinner(s.board)
+        _state.value = s.copy(
+            isRotating = false,
+            boardBeforeRotation = null,
+            currentPlayer = if (s.currentPlayer == Player.WHITE) Player.BLACK else Player.WHITE,
+            phase = if (winner != null) GamePhase.DONE else GamePhase.OPTIONAL_MOVE,
+            winner = winner
+        )
     }
 
     // ── OPTIONAL_MOVE ────────────────────────────────────────────────────────
@@ -41,11 +56,9 @@ class GameViewModel : ViewModel() {
         val sel = s.selectedCell
 
         when {
-            // 같은 셀 탭 → 선택 해제
             sel != null && sel.first == row && sel.second == col -> {
                 _state.value = s.copy(selectedCell = null)
             }
-            // 선택된 공이 있고 인접 빈 칸 탭 → 이동 후 PLACE 단계로
             sel != null && s.board[row][col] == CellState.EMPTY && isAdjacent(sel, row, col) -> {
                 val newBoard = mutableBoard(s.board)
                 newBoard[row][col] = newBoard[sel.first][sel.second]
@@ -56,7 +69,6 @@ class GameViewModel : ViewModel() {
                     phase = GamePhase.PLACE
                 )
             }
-            // 상대 공 탭 → 선택 (또는 다른 상대 공으로 재선택)
             s.board[row][col] == opponentColor -> {
                 _state.value = s.copy(selectedCell = Pair(row, col))
             }
@@ -64,6 +76,7 @@ class GameViewModel : ViewModel() {
     }
 
     // ── PLACE ────────────────────────────────────────────────────────────────
+    // 배치 → 회전까지만 처리. 차례 전환·승리 판정은 onRotationComplete()에서.
 
     private fun handlePlace(s: GameState, row: Int, col: Int) {
         if (s.board[row][col] != CellState.EMPTY) return
@@ -73,44 +86,23 @@ class GameViewModel : ViewModel() {
         val ownColor = if (s.currentPlayer == Player.WHITE) CellState.WHITE else CellState.BLACK
         val newBoard = mutableBoard(s.board)
         newBoard[row][col] = ownColor
-
-        val rotated = rotate(newBoard.toImmutable())
-        val winner = checkWinner(rotated)
+        val boardAfterPlace = newBoard.toImmutable()
+        val rotated = rotate(boardAfterPlace)
 
         _state.value = s.copy(
             board = rotated,
+            boardBeforeRotation = boardAfterPlace,
             whiteSideCount = if (s.currentPlayer == Player.WHITE) s.whiteSideCount - 1 else s.whiteSideCount,
             blackSideCount = if (s.currentPlayer == Player.BLACK) s.blackSideCount - 1 else s.blackSideCount,
-            currentPlayer = if (s.currentPlayer == Player.WHITE) Player.BLACK else Player.WHITE,
-            phase = if (winner != null) GamePhase.DONE else GamePhase.OPTIONAL_MOVE,
-            winner = winner
+            isRotating = true
         )
     }
 
-    // ── 회전 ─────────────────────────────────────────────────────────────────
-    //
-    // 반시계 방향 1칸 회전. src → dst 매핑.
-    //
-    // 바깥 궤도:   안쪽 궤도:
-    // 1 2 3 4      . . . .
-    // 5 . . 8      . 6 7 .
-    // 9 . . C      . A B .
-    // D E F G      . . . .
+    // ── 회전 (ROTATION_MAPPING 공유) ──────────────────────────────────────────
 
     private fun rotate(board: List<List<CellState>>): List<List<CellState>> {
         val new = mutableBoard(board)
-        // src → dst: new[dst] = old[src]
-        val mapping = listOf(
-            // 바깥 궤도 (12칸)
-            Pair(0,0) to Pair(1,0), Pair(0,1) to Pair(0,0), Pair(0,2) to Pair(0,1),
-            Pair(0,3) to Pair(0,2), Pair(1,3) to Pair(0,3), Pair(2,3) to Pair(1,3),
-            Pair(3,3) to Pair(2,3), Pair(3,2) to Pair(3,3), Pair(3,1) to Pair(3,2),
-            Pair(3,0) to Pair(3,1), Pair(2,0) to Pair(3,0), Pair(1,0) to Pair(2,0),
-            // 안쪽 궤도 (4칸)
-            Pair(1,1) to Pair(2,1), Pair(1,2) to Pair(1,1),
-            Pair(2,2) to Pair(1,2), Pair(2,1) to Pair(2,2)
-        )
-        for ((src, dst) in mapping) {
+        for ((src, dst) in ROTATION_MAPPING) {
             new[dst.first][dst.second] = board[src.first][src.second]
         }
         return new.toImmutable()
@@ -146,4 +138,3 @@ class GameViewModel : ViewModel() {
 
     private fun List<MutableList<CellState>>.toImmutable() = map { it.toList() }
 }
-
