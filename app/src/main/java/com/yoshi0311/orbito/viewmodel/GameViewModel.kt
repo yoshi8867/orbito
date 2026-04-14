@@ -99,25 +99,16 @@ class GameViewModel : ViewModel() {
 
     private fun rotate(board: List<List<CellState>>): List<List<CellState>> {
         val new = mutableBoard(board)
+        // src → dst: new[dst] = old[src]
         val mapping = listOf(
             // 바깥 궤도 (12칸)
-            0 to 0  paired  1 to 0,
-            0 to 1  paired  0 to 0,
-            0 to 2  paired  0 to 1,
-            0 to 3  paired  0 to 2,
-            1 to 3  paired  0 to 3,
-            2 to 3  paired  1 to 3,
-            3 to 3  paired  2 to 3,
-            3 to 2  paired  3 to 3,
-            3 to 1  paired  3 to 2,
-            3 to 0  paired  3 to 1,
-            2 to 0  paired  3 to 0,
-            1 to 0  paired  2 to 0,
+            Pair(0,0) to Pair(1,0), Pair(0,1) to Pair(0,0), Pair(0,2) to Pair(0,1),
+            Pair(0,3) to Pair(0,2), Pair(1,3) to Pair(0,3), Pair(2,3) to Pair(1,3),
+            Pair(3,3) to Pair(2,3), Pair(3,2) to Pair(3,3), Pair(3,1) to Pair(3,2),
+            Pair(3,0) to Pair(3,1), Pair(2,0) to Pair(3,0), Pair(1,0) to Pair(2,0),
             // 안쪽 궤도 (4칸)
-            1 to 1  paired  2 to 1,
-            1 to 2  paired  1 to 1,
-            2 to 2  paired  1 to 2,
-            2 to 1  paired  2 to 2
+            Pair(1,1) to Pair(2,1), Pair(1,2) to Pair(1,1),
+            Pair(2,2) to Pair(1,2), Pair(2,1) to Pair(2,2)
         )
         for ((src, dst) in mapping) {
             new[dst.first][dst.second] = board[src.first][src.second]
@@ -156,6 +147,3 @@ class GameViewModel : ViewModel() {
     private fun List<MutableList<CellState>>.toImmutable() = map { it.toList() }
 }
 
-// Pair 생성 헬퍼 (가독성용)
-private infix fun Pair<Int, Int>.paired(other: Pair<Int, Int>) = this to other
-private infix fun Int.to(other: Int) = Pair(this, other)
