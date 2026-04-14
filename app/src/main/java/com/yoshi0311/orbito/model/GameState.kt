@@ -12,7 +12,7 @@ data class GameState(
     val phase: GamePhase = GamePhase.OPTIONAL_MOVE,
     val selectedCell: Pair<Int, Int>? = null,
     val winner: Player? = null,
-    // 회전 애니메이션 상태
     val isRotating: Boolean = false,
-    val boardBeforeRotation: List<List<CellState>>? = null
+    val boardBeforeRotation: List<List<CellState>>? = null,
+    val timeLeft: Int = 20
 )
