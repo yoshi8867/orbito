@@ -120,10 +120,11 @@ private fun TurnIndicator(state: GameState) {
     if (state.phase == GamePhase.DONE) return
 
     val playerColor = if (state.currentPlayer == Player.WHITE) WhiteBall else BlackBall
+    val isFirstTurn = state.whiteSideCount == 8 && state.blackSideCount == 8
     val label = when {
         state.phase == GamePhase.OPTIONAL_MOVE && state.selectedCell != null ->
             "TAP ADJACENT CELL"
-        state.phase == GamePhase.OPTIONAL_MOVE ->
+        state.phase == GamePhase.OPTIONAL_MOVE && !isFirstTurn ->
             if (state.currentPlayer == Player.WHITE) "WHITE  ·  MOVE OR PLACE"
             else "BLACK  ·  MOVE OR PLACE"
         else ->

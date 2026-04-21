@@ -19,12 +19,15 @@ package com.yoshi0311.orbito.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // 게임 전용 색상
-val AppBackground = Color(0xFF9E9E9E)
-val CellNormal    = Color(0x38FFFFFF)
-val CellSelected  = Color(0x70FFFFFF)
-val CellAdjacent  = Color(0x50FFFFFF)
-val WhiteBall     = Color(0xFFFFFFFF)
-val BlackBall     = Color(0xFF212121)
+val AppBackground      = Color(0xFF9E9E9E)
+val CellNormal         = Color(0x38FFFFFF)
+val CellSelected       = Color(0x55FFE082)   // 황금빛 배경
+val CellSelectedBorder = Color(0xCCFFE082)   // 황금빛 테두리
+val CellAdjacent       = Color(0x3580DEEA)   // 시안 배경
+val CellAdjacentBorder = Color(0xAA80DEEA)   // 시안 테두리
+val CellAdjacentDot    = Color(0xAA80DEEA)   // 시안 도트
+val WhiteBall          = Color(0xFFFFFFFF)
+val BlackBall          = Color(0xFF212121)
 
 // Material Theme 기본값 (Theme.kt 참조용)
 val Purple80     = Color(0xFFD0BCFF)

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,8 +35,11 @@ import com.yoshi0311.orbito.model.Player
 import com.yoshi0311.orbito.model.ROTATION_MAPPING
 import com.yoshi0311.orbito.ui.theme.BlackBall
 import com.yoshi0311.orbito.ui.theme.CellAdjacent
+import com.yoshi0311.orbito.ui.theme.CellAdjacentBorder
+import com.yoshi0311.orbito.ui.theme.CellAdjacentDot
 import com.yoshi0311.orbito.ui.theme.CellNormal
 import com.yoshi0311.orbito.ui.theme.CellSelected
+import com.yoshi0311.orbito.ui.theme.CellSelectedBorder
 import com.yoshi0311.orbito.ui.theme.WhiteBall
 
 private val GAP = 4.dp
@@ -157,9 +161,15 @@ private fun GameCell(
         isAdjacentTarget -> CellAdjacent
         else             -> CellNormal
     }
+    val borderModifier = when {
+        isSelected       -> Modifier.border(2.dp, CellSelectedBorder, RoundedCornerShape(8.dp))
+        isAdjacentTarget -> Modifier.border(1.5.dp, CellAdjacentBorder, RoundedCornerShape(8.dp))
+        else             -> Modifier
+    }
     Box(
         modifier = Modifier
             .size(cellSize)
+            .then(borderModifier)
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
@@ -168,7 +178,14 @@ private fun GameCell(
         when (cellState) {
             CellState.WHITE -> Ball(color = WhiteBall, size = ballSize)
             CellState.BLACK -> Ball(color = BlackBall, size = ballSize)
-            CellState.EMPTY -> {}
+            CellState.EMPTY -> if (isAdjacentTarget) {
+                Box(
+                    modifier = Modifier
+                        .size(ballSize * 0.3f)
+                        .clip(CircleShape)
+                        .background(CellAdjacentDot)
+                )
+            }
         }
     }
 }
